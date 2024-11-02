@@ -5,11 +5,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Music Translator</Text>
+      <Text style={styles.title}>Music Transcriber</Text>
       <View style={styles.buttonContainer}>
         <Link href="/record" asChild>
           <Pressable style={styles.button}>
-            <Text style={styles.buttonText}>Start Recording</Text>
+            <Text style={styles.buttonText}>Start using the App!</Text>
           </Pressable>
         </Link>
       </View>

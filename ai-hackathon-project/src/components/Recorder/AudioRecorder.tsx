@@ -1,30 +1,20 @@
-// components/AudioRecorder.js
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { View, StyleSheet, Text, Pressable } from 'react-native';
 import { Audio } from 'expo-av';
-import * as FileSystem from 'expo-file-system';
+import { router } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-export default function AudioRecorder() {
-  const [recording, setRecording] = useState(null);
+export default function RecordScreen() {
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [isRecording, setIsRecording] = useState(false);
-  const [permissionResponse, requestPermission] = Audio.usePermissions();
 
   useEffect(() => {
-    // Cleanup recording on unmount
-    return () => {
-      if (recording) {
-        recording.unloadAsync();
-      }
-    };
-  }, [recording]);
+    // Request permission when component mounts
+    Audio.requestPermissionsAsync();
+  }, []);
 
   async function startRecording() {
     try {
-      // Request permissions if not already granted
-      if (!permissionResponse?.granted) {
-        await requestPermission();
-      }
-
       // Configure audio mode
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
@@ -42,55 +32,89 @@ export default function AudioRecorder() {
     }
   }
 
-  // components/AudioRecorder.js - Modified stopRecording function
   async function stopRecording() {
+    if (!recording) return;
+
     try {
-      if (!recording) return;
-  
-      setIsRecording(false);
       await recording.stopAndUnloadAsync();
       const uri = recording.getURI();
+      setIsRecording(false);
       
-      // Upload to backend and get MIDI file
-      const midiUri = await audioService.uploadRecording(uri);
+      // // Send recording to backend
+      // await sendAudioToBackend(uri);
       
-      // Clean up recording file
-      await FileSystem.deleteAsync(uri);
-      setRecording(null);
-  
-      // Handle the MIDI file (e.g., play it, save it, etc.)
-      console.log('MIDI file saved at:', midiUri);
-  
+      // // Navigate to results screen
+      // router.push('/results');
     } catch (err) {
-      console.error('Failed to stop recording:', err);
+      console.error('Failed to stop recording', err);
+    }
+  }
+
+  async function sendAudioToBackend(audioUri: string) {
+    const formData = new FormData();
+    formData.append('audio', {
+      uri: audioUri,
+      type: 'audio/wav',
+      name: 'recording.wav',
+    } as any);
+
+    try {
+      const response = await fetch('http://your-backend-url/api/process-audio', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      const result = await response.json();
+      console.log('Processing result:', result);
+      
+      // Store the result for the results screen
+      // You might want to use global state management here
+      
+    } catch (error) {
+      console.error('Error sending audio:', error);
     }
   }
 
   return (
-    <View style={styles.container}>
-      <Pressable
-        style={[styles.button, isRecording && styles.recordingButton]}
-        onPress={isRecording ? stopRecording : startRecording}
-      >
-        <Text style={styles.buttonText}>
-          {isRecording ? 'Stop Recording' : 'Start Recording'}
-        </Text>
-      </Pressable>
-    </View>
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.title}>Record Your Melody</Text>
+      <View style={styles.buttonContainer}>
+        <Pressable
+          style={[styles.button, isRecording && styles.recordingButton]}
+          onPress={isRecording ? stopRecording : startRecording}
+        >
+          <Text style={styles.buttonText}>
+            {isRecording ? 'Stop Recording' : 'Start Recording'}
+          </Text>
+        </Pressable>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 20,
+    backgroundColor: '#fff',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginVertical: 20,
+  },
+  buttonContainer: {
+    flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
   },
   button: {
     backgroundColor: '#007AFF',
-    padding: 20,
-    borderRadius: 50,
-    width: 200,
+    padding: 15,
+    borderRadius: 10,
     alignItems: 'center',
   },
   recordingButton: {
