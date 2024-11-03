@@ -28,7 +28,12 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
+      <Stack screenOptions={{
+        headerShown: false, // This removes the header
+        contentStyle: {
+          backgroundColor: '#fff', // Sets default background color
+        },
+      }}>
         <Stack.Screen name="Home/home" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>

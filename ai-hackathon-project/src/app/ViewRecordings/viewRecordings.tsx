@@ -4,7 +4,7 @@ import { Audio } from 'expo-av';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const API_BASE_URL = 'http://192.168.1.120:5001';
+const API_BASE_URL = 'http://10.197.92.154:5001';
 
 export default function ViewRecordingScreen() {
   const { recordingUri } = useLocalSearchParams();
@@ -126,6 +126,7 @@ export default function ViewRecordingScreen() {
         >
           <Text style={styles.buttonText}>Record Again</Text>
         </Pressable>
+        
       </View>
     </SafeAreaView>
   );
@@ -160,6 +161,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#007AFF',
   },
   recordAgainButton: {
+    backgroundColor: '#FF3B30',
+  },
+  customizeButton: {
     backgroundColor: '#FF3B30',
   },
   buttonText: {

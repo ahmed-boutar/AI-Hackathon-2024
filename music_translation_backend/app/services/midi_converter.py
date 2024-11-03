@@ -1,62 +1,95 @@
 import os
 from pathlib import Path
 import fluidsynth
+import mido
+import soundfile as sf
+import numpy as np
 
 class MidiConverter:
     def __init__(self):
-        # Path to soundfont file - you'll need to download this
-        self.soundfont_path = "path/to/your/soundfont.sf2"
-        
-        # Instrument mapping
-        self.instrument_map = {
-            "piano": 0,  # Grand Piano
+        self.sample_rate = 48000
+        self.instruments = {
+            "piano": 0,    # Grand Piano
             "guitar": 24,  # Nylon String Guitar
             "violin": 40,  # Violin
-            "saxophone": 65,  # Alto Sax
+            "saxophone": 65  # Alto Sax
         }
-        
-        # Initialize FluidSynth
-        self.fs = fluidsynth.Synth()
-        self.fs.start()
-        
-        # Load soundfont
-        self.sfid = self.fs.sfload(self.soundfont_path)
-        self.fs.sfont_select(0, self.sfid)
+        self.soundfont_path = './data/sound_fonts/FluidR3_GM/FluidR3_GM.sf2'
+        self.fs = None
 
-    def convert_midi_to_audio(self, midi_path: str, instrument: str, output_dir: str) -> str:
-        """
-        Convert MIDI file to audio using specified instrument
-        
-        Args:
-            midi_path: Path to the MIDI file
-            instrument: Name of the instrument (piano, guitar, violin, saxophone)
-            output_dir: Directory to save the output audio file
-        
-        Returns:
-            Path to the generated audio file
-        """
-        try:
-            # # Create output directory if it doesn't exist
-            # os.makedirs(output_dir, exist_ok=True)
+    def initialize_synth(self):
+        """Initialize FluidSynth with settings"""
+        if self.fs is None:
+            self.fs = fluidsynth.Synth(gain=0.5)
+            self.fs.start(driver="coreaudio")
             
-            # Get instrument program number
-            program = self.instrument_map.get(instrument.lower(), 0)
+            if not os.path.exists(self.soundfont_path):
+                raise FileNotFoundError("SoundFont file not found")
             
-            # Set instrument
-            self.fs.program_change(0, program)
-            
-            # Generate output path
-            midi_filename = Path(midi_path).stem
-            output_path = os.path.join(output_dir, f"{midi_filename}_{instrument}.wav")
-            
-            # Convert MIDI to audio
-            self.fs.midi_to_audio(midi_path, output_path)
-            
-            return output_path
-            
-        except Exception as e:
-            raise Exception(f"Error converting MIDI to audio: {str(e)}")
+            self.sfid = self.fs.sfload(self.soundfont_path)
 
     def cleanup(self):
         """Cleanup FluidSynth resources"""
-        self.fs.delete()
+        if self.fs:
+            self.fs.delete()
+            self.fs = None
+
+    def _play_midi_file(self, midi_path):
+        """
+        Convert MIDI file to audio data using FluidSynth
+        """
+        audio_data = []
+        try:
+            midi_file = mido.MidiFile(midi_path)
+            
+            for msg in midi_file:
+                if msg.type == 'note_on':
+                    self.fs.noteon(0, msg.note, msg.velocity)
+                elif msg.type == 'note_off':
+                    self.fs.noteoff(0, msg.note)
+                
+                time_to_wait = int(msg.time * self.sample_rate)
+                if time_to_wait > 0:
+                    audio_data.append(self.fs.get_samples(time_to_wait))
+
+        except Exception as e:
+            raise Exception(f"Error processing MIDI file: {str(e)}")
+
+        return np.concatenate(audio_data)
+
+    def _save_audio(self, audio_data, output_path):
+        """Save audio data to WAV file"""
+        sf.write(output_path, audio_data, self.sample_rate)
+
+    def generate_instrument_audio(self, midi_path):
+        """
+        Generate audio files for all instruments from a MIDI file
+        Returns a dictionary mapping instrument names to their audio file paths
+        """
+        try:
+            self.initialize_synth()
+            
+            if not os.path.exists(midi_path):
+                raise FileNotFoundError(f"MIDI file not found: {midi_path}")
+
+            output_dir = os.path.dirname(midi_path)
+            midi_stem = Path(midi_path).stem
+            generated_files = {}
+
+            for instrument_name, program_num in self.instruments.items():
+                print(f"Processing {instrument_name}...")
+                self.fs.program_select(0, self.sfid, 0, program_num)
+                
+                # Generate and save audio
+                audio_data = self._play_midi_file(midi_path)
+                output_path = os.path.join(output_dir, f"{midi_stem}_{instrument_name}.wav")
+                self._save_audio(audio_data, output_path)
+                
+                generated_files[instrument_name] = output_path
+
+            return generated_files
+
+        except Exception as e:
+            raise Exception(f"Error generating instrument audio: {str(e)}")
+        finally:
+            self.cleanup()

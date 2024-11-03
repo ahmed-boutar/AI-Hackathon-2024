@@ -6,7 +6,8 @@ import librosa
 import pretty_midi
 from basic_pitch.inference import predict_and_save
 from basic_pitch import ICASSP_2022_MODEL_PATH
-from app.utils.file_handler import create_recording_folder, save_audio_file
+from app.utils.file_handler import create_recording_folder, save_audio_file, get_midi_path
+from app.services.midi_converter import MidiConverter
 import os
 
 import sys 
@@ -18,6 +19,7 @@ class AudioProcessor:
     def __init__(self):
         self.sample_rate = 22050  # Standard sample rate for librosa
         self.upload_dir = os.environ.get("UPLOAD_DIR")
+        self.midi_converter = MidiConverter()
     
     def process_audio(self, audio_file, recording_name):
         # Create a folder for this recording
@@ -28,6 +30,10 @@ class AudioProcessor:
         
         # Transcribe to MIDI
         midi_data = self.transcribe_to_midi(audio_path, folder_path)
+        midi_file_path = get_midi_path(folder_path)
+
+        instrument_files = self.midi_converter.generate_instrument_audio(midi_file_path)
+        
         
         # # Save the MIDI file
         # midi_path = save_midi_file(midi_data, folder_path)
