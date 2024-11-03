@@ -1,6 +1,6 @@
-import { View, StyleSheet, Text } from 'react-native';
+import { View, StyleSheet, Text, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 
 export default function ResultsScreen() {
   return (
@@ -13,6 +13,12 @@ export default function ResultsScreen() {
       <Link href="/record" style={styles.link}>
         Record Another
       </Link>
+      <Pressable
+        style={[styles.button, styles.customizeButton]}
+        onPress={() => router.push('/customize')}
+      >
+        <Text style={styles.buttonText}>Customize File</Text>
+      </Pressable>
     </SafeAreaView>
   );
 }
@@ -39,5 +45,18 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: 'center',
     marginBottom: 20,
+  },
+  button: {
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  customizeButton: {
+    backgroundColor: '#FF3B30',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
   },
 });
