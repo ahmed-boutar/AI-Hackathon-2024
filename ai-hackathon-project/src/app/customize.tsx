@@ -275,53 +275,233 @@ export default function CustomizeScreen() {
     }
   };
 
+//   const playAudio = async (trackId: string, instrument: string) => {
+//     try {
+//       // Stop current playback
+//       if (sound) {
+//         await sound.unloadAsync();
+//       }
+
+//       const fileName = tracks.find(t => t.id === trackId)?.fileName;
+//       if (!fileName) return;
+
+//       const audioKey = `${fileName.replace('.mid', '')}_${instrument.toLowerCase()}`;
+//       let audioUrl = audioFiles[audioKey];
+
+//       if (!audioUrl) {
+//         console.error('Audio file not found');
+//         return;
+//       }
+
+//       // Construct full URL
+//       const fullUrl = `${API_BASE_URL}${'/api/audio'}${audioUrl}`;
+//       console.log('Loading audio from:', fullUrl);
+
+//       // Create and load the sound
+//       const { sound: newSound } = await Audio.Sound.createAsync(
+//         { 
+//           uri: fullUrl,
+//           headers: {
+//             'Accept': 'audio/wav',
+//           }
+//         },
+//         { 
+//           shouldPlay: true,
+//           volume: 1.0,
+//           progressUpdateIntervalMillis: 1000,
+//           positionMillis: 0,
+//         },
+//         async (status) => {
+//           console.log('Playback status:', status);
+          
+//           // If the sound is loaded but not playing, try to play it
+//           if (status.isLoaded && !status.isPlaying && !status.didJustFinish) {
+//             try {
+//               await newSound.playAsync();
+//             } catch (playError) {
+//               console.error('Error playing sound:', playError);
+//             }
+//           }
+//         }
+//       );
+
+//       // Explicitly try to play the sound
+//       await newSound.playAsync();
+      
+//       setSound(newSound);
+//       setIsPlaying(true);
+//       setCurrentTrack(trackId);
+
+//       // Handle playback status updates
+//       newSound.setOnPlaybackStatusUpdate(async (status: any) => {
+//         if (status.isLoaded) {
+//           if (status.didJustFinish) {
+//             setIsPlaying(false);
+//             setCurrentTrack(null);
+//           } else if (status.isBuffering) {
+//             console.log('Buffering...');
+//           } else if (!status.isPlaying && status.shouldPlay) {
+//             // Try to resume playback if it stopped unexpectedly
+//             try {
+//               await newSound.playAsync();
+//             } catch (resumeError) {
+//               console.error('Error resuming playback:', resumeError);
+//             }
+//           }
+//         } else if (status.error) {
+//           console.error('Playback error:', status.error);
+//           setIsPlaying(false);
+//           setCurrentTrack(null);
+//         }
+//       });
+
+//     } catch (error) {
+//       console.error('Error playing audio:', error);
+//       setIsPlaying(false);
+//       setCurrentTrack(null);
+      
+//       Alert.alert(
+//         'Playback Error',
+//         'Unable to play the audio file. Please try again.'
+//       );
+//     }
+// };
+  // const playAudio = async (trackId: string, instrument: string) => {
+  //   try {
+  //     // Unload previous sound
+  //     if (sound) {
+  //       await sound.unloadAsync();
+  //       setSound(null);
+  //     }
+
+  //     const fileName = tracks.find(t => t.id === trackId)?.fileName;
+  //     if (!fileName) {
+  //       console.error('Track not found');
+  //       return;
+  //     }
+
+  //     const audioKey = `${fileName.replace('.mid', '')}_${instrument.toLowerCase()}`;
+  //     let audioUrl = audioFiles[audioKey];
+
+  //     if (!audioUrl) {
+  //       console.error('Audio file not found for key:', audioKey);
+  //       return;
+  //     }
+
+  //     // Construct full URL and log it for debugging
+  //     const fullUrl = `${API_BASE_URL}${'/api/audio'}${audioUrl}`;
+  //     console.log('Attempting to load audio from:', fullUrl);
+
+  //     try {
+  //       // Create and load the sound
+  //       const { sound: newSound } = await Audio.Sound.createAsync(
+  //         { 
+  //           uri: fullUrl,
+  //           headers: {
+  //             'Accept': 'audio/wav',
+  //           }
+  //         },
+  //         { 
+  //           shouldPlay: false,  // Don't auto-play until loaded
+  //           volume: 1.0,
+  //           progressUpdateIntervalMillis: 1000,
+  //         }
+  //       );
+
+  //       // Store the sound reference
+  //       setSound(newSound);
+
+  //       // Add status update handler
+  //       newSound.setOnPlaybackStatusUpdate((status) => {
+  //         console.log('Playback status:', status);
+  //         if (status.isLoaded) {
+  //           if (status.didJustFinish) {
+  //             setIsPlaying(false);
+  //           } else if (status.isBuffering) {
+  //             console.log('Buffering...');
+  //           }
+  //         }
+  //       });
+
+  //       // Try to play the sound
+  //       await newSound.playAsync();
+  //       setIsPlaying(true);
+  //       setCurrentTrack(trackId);
+
+  //     } catch (loadError) {
+  //       console.error('Error loading or playing sound:', loadError);
+  //       setIsPlaying(false);
+  //       setCurrentTrack(null);
+  //     }
+
+  //   } catch (error) {
+  //     console.error('Error in playAudio:', error);
+  //     setIsPlaying(false);
+  //     setCurrentTrack(null);
+      
+  //     Alert.alert(
+  //       'Playback Error',
+  //       'Unable to play the audio file. Please try again.'
+  //     );
+  //   }
+  // };
   const playAudio = async (trackId: string, instrument: string) => {
     try {
-      // Stop current playback
+      // Unload previous sound
       if (sound) {
         await sound.unloadAsync();
+        setSound(null);
       }
-
+  
       const fileName = tracks.find(t => t.id === trackId)?.fileName;
-      if (!fileName) return;
-
-      const audioKey = `${fileName.replace('.mid', '')}_${instrument.toLowerCase()}`;
-      let audioUrl = audioFiles[audioKey];
-
-      if (!audioUrl) {
-        console.error('Audio file not found');
+      if (!fileName) {
+        console.error('Track not found');
         return;
       }
-
-      // Construct full URL
-      audioUrl = `${API_BASE_URL}${audioUrl}`;
-      console.log('Playing audio from:', audioUrl); // Debug log
-
-      // Load and play the sound
+  
+      // Construct the audio key - make sure this matches your backend format
+      const baseName = fileName.replace('.mid', '');
+      const audioKey = `${baseName}_${instrument.toLowerCase()}`;
+      let audioUrl = audioFiles[audioKey];
+  
+      if (!audioUrl) {
+        console.error('Audio file not found for key:', audioKey);
+        return;
+      }
+  
+      // Construct full URL - remove the '/api/audio' part since it's already in the URL
+      const fullUrl = `${API_BASE_URL}${'/api/audio'}${audioUrl}`;
+      console.log('Attempting to load audio from:', fullUrl);
+  
+      // Initialize audio mode
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+        shouldDuckAndroid: true,
+        staysActiveInBackground: true,
+        playThroughEarpieceAndroid: false
+      });
+  
+      // Create and load the sound
       const { sound: newSound } = await Audio.Sound.createAsync(
         { 
-          uri: audioUrl,
+          uri: fullUrl,
           headers: {
             'Accept': 'audio/wav',
-            'Range': 'bytes=0-' // Add range header for iOS
           }
         },
         { 
-          shouldPlay: true,
+          shouldPlay: false,
           volume: 1.0,
           progressUpdateIntervalMillis: 1000,
-        },
-        (status) => {
-          console.log('Playback status:', status); // Debug log
         }
       );
-
+  
       setSound(newSound);
-      setIsPlaying(true);
-      setCurrentTrack(trackId);
-
-      // Handle playback status updates
+  
+      // Add status update handler before playing
       newSound.setOnPlaybackStatusUpdate((status: any) => {
+        console.log('Playback status:', status);
         if (status.isLoaded) {
           if (status.didJustFinish) {
             setIsPlaying(false);
@@ -329,13 +509,17 @@ export default function CustomizeScreen() {
           }
         } else if (status.error) {
           console.error('Playback error:', status.error);
-          setIsPlaying(false);
-          setCurrentTrack(null);
         }
       });
-
+  
+      // Explicitly play the sound
+      console.log('Starting playback...');
+      await newSound.playAsync();
+      setIsPlaying(true);
+      setCurrentTrack(trackId);
+  
     } catch (error) {
-      console.error('Error playing audio:', error);
+      console.error('Error in playAudio:', error);
       setIsPlaying(false);
       setCurrentTrack(null);
       
@@ -344,36 +528,44 @@ export default function CustomizeScreen() {
         'Unable to play the audio file. Please try again.'
       );
     }
-};
-
-const handlePlayPause = async () => {
-  try {
-    if (!currentTrack) {
-      // If no track is selected, play the first one
-      const firstTrack = tracks[0];
-      if (firstTrack) {
-        await playAudio(firstTrack.id, firstTrack.instrument);
+  };
+  const handlePlayPause = async () => {
+    try {
+      // If currently playing, handle pause
+      if (isPlaying && sound) {
+        await sound.pauseAsync();
+        setIsPlaying(false);
+        return;
       }
-      return;
-    }
 
-    if (isPlaying && sound) {
-      await sound.pauseAsync();
-      setIsPlaying(false);
-    } else {
-      const track = tracks.find(t => t.id === currentTrack);
-      if (track) {
-        await playAudio(track.id, track.instrument);
+      // If we have a sound object but it's paused, resume playback
+      if (sound && currentTrack) {
+        await sound.playAsync();
+        setIsPlaying(true);
+        return;
       }
+
+      // If no track is selected or no sound is loaded, start fresh
+      const trackToPlay = currentTrack 
+        ? tracks.find(t => t.id === currentTrack)
+        : tracks[0]; // Default to first track if none selected
+
+      if (trackToPlay) {
+        console.log('Playing track:', trackToPlay.fileName, 'with instrument:', trackToPlay.instrument);
+        await playAudio(trackToPlay.id, trackToPlay.instrument);
+        setCurrentTrack(trackToPlay.id);
+      } else {
+        console.log('No track available to play');
+      }
+
+    } catch (error) {
+      console.error('Error handling play/pause:', error);
+      Alert.alert(
+        'Playback Error',
+        'An error occurred while playing the audio.'
+      );
     }
-  } catch (error) {
-    console.error('Error handling play/pause:', error);
-    Alert.alert(
-      'Playback Error',
-      'An error occurred while playing the audio.'
-    );
-  }
-};
+  };
 
   const handleStop = async () => {
     if (sound) {
