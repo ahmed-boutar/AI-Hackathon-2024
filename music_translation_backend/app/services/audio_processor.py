@@ -6,6 +6,7 @@ import librosa
 import pretty_midi
 from basic_pitch.inference import predict_and_save
 from basic_pitch import ICASSP_2022_MODEL_PATH
+from app.utils.file_handler import create_recording_folder, save_audio_file
 import os
 
 import sys 
@@ -17,30 +18,40 @@ class AudioProcessor:
     def __init__(self):
         self.sample_rate = 22050  # Standard sample rate for librosa
         self.upload_dir = os.environ.get("UPLOAD_DIR")
-
-    async def save_upload_file(self, file) -> Path:
-        """Save uploaded file to temporary directory"""
-        print("Trying to upload file")
-        temp_file = self.upload_dir / f"{uuid.uuid4()}.wav"
-        with temp_file.open("wb") as buffer:
-            content = await file.read()
-            buffer.write(content)
-        return temp_file
     
-    def transcribe_to_midi(self, input_audio_path, output_midi_path):
+    def process_audio(self, audio_file, recording_name):
+        # Create a folder for this recording
+        folder_path = create_recording_folder(recording_name)
+        
+        # Save the audio file
+        audio_path = save_audio_file(audio_file, folder_path)
+        
+        # Transcribe to MIDI
+        midi_data = self.transcribe_to_midi(audio_path, folder_path)
+        
+        # # Save the MIDI file
+        # midi_path = save_midi_file(midi_data, folder_path)
+        
+        return {
+            'folder_path': folder_path,
+            'audio_path': audio_path,
+            # 'midi_path': midi_path
+        }
+    
+    def transcribe_to_midi(self, input_audio_path, output_dir):
         '''
         Use the basic-pitch model by spotify to convert audio to midi
         '''
         predict_and_save(
             [input_audio_path],
-            output_directory=output_midi_path,
+            output_directory=output_dir,
             save_midi=True,
             save_model_outputs=True,
             sonify_midi=True, 
             save_notes=True,
             model_or_model_path=ICASSP_2022_MODEL_PATH,
         )
-        print(f"Saved MIDI file to {output_midi_path}")
+        print(f"Saved MIDI file to {output_dir}")
     
     def cleanup_files(self, *files: Path):
         """Clean up temporary files"""
