@@ -20,7 +20,20 @@ def process_audio():
     if audio_file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
 
-    filename = save_audio_file(audio_file)
+    recording_name = request.form.get('name', 'recording')
+    try:
+        result = audio_processor.process_audio(audio_file, recording_name)
+        
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'folder_path': result['folder_path'],
+                'audio_path': result['audio_path']
+            }
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    # filename = save_audio_file(audio_file)
     # DATA_DIRECTORY = './data/'
     # input_file = os.path.join(DATA_DIRECTORY, 'test-humming-01-1102.m4a')
     # # Process audio to MIDI
@@ -30,16 +43,7 @@ def process_audio():
     # instrument = request.form.get('instrument', 'piano')
     # converted_audio = midi_converter.convert_instrument(midi_data, instrument)
     
-    # Return the processed audio path or base64 encoded audio
-    return jsonify({
-        'status': 'success',
-        # 'input_file': input_file
-        # 'data': {
-        #     # 'converted_audio': converted_audio,
-        #     'midi_data': midi_data,
-        #     # 'instrument': instrument,
-        # }
-    })
+   
 
 @audio_bp.route('/api/instruments', methods=['GET'])
 def get_instruments():
