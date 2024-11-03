@@ -90,11 +90,29 @@ def get_latest_recordings():
         return jsonify({'error': str(e)}), 500
     
 
+# @audio_bp.route('/api/audio/<path:filename>')
+# def serve_audio(filename):
+#     try:
+#         # Construct the full path to the audio file
+#         audio_path = filename
+#         print(audio_path)
+#         if not os.path.exists(audio_path):
+#             return jsonify({'error': 'Audio file not found'}), 404
+            
+#         return send_file(
+#             audio_path,
+#             mimetype='audio/wav',
+#             as_attachment=False,
+#             conditional=True  # Enable partial content support
+#         )
+#     except Exception as e:
+#         return jsonify({'error': str(e)}), 500
+
 @audio_bp.route('/api/audio/<path:filename>')
 def serve_audio(filename):
     try:
         # Construct the full path to the audio file
-        audio_path = os.path.join(DATA_DIR, filename)
+        audio_path = filename
         
         if not os.path.exists(audio_path):
             return jsonify({'error': 'Audio file not found'}), 404
@@ -102,8 +120,10 @@ def serve_audio(filename):
         return send_file(
             audio_path,
             mimetype='audio/wav',
+            conditional=True,
             as_attachment=False,
-            conditional=True  # Enable partial content support
+            download_name=os.path.basename(audio_path)
         )
     except Exception as e:
+        print(f"Error serving audio: {str(e)}")
         return jsonify({'error': str(e)}), 500

@@ -7,7 +7,7 @@ import numpy as np
 
 class MidiConverter:
     def __init__(self):
-        self.sample_rate = 48000
+        self.sample_rate = 96000
         self.instruments = {
             "piano": 0,    # Grand Piano
             "guitar": 24,  # Nylon String Guitar
